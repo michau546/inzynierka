@@ -2,11 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Dimensions, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { LineChart } from 'react-native-chart-kit';
-import { restClient } from '@polygon.io/client-js';
 
 const screenWidth = Dimensions.get('window').width;
-const apiKey = '71H9CXzKp99QvYNlhEJf1h5gpf8kikJL';
-const client = restClient(apiKey);
 
 const periods = [
   { label: 'Last 7 Days', value: '7' },
@@ -35,24 +32,12 @@ export default function TabThreeScreen() {
     const start = startDate.toISOString().split('T')[0];
 
     try {
-      let symbol;
-      if (currency === 'USD') {
-        symbol = `C:EURUSD`;
-      } else {
-        symbol = `C:${currency}USD`;
-      }
+      const response = await fetch(`https://api.nbp.pl/api/exchangerates/rates/A/${currency}/${start}/${end}/?format=json`);
+      const data = await response.json();
 
-      const response = await client.forex.aggregates(symbol, 1, 'day', start, end);
-
-      if (response.results && response.results.length > 0) {
-        const dates = response.results.map(result => new Date(result.t).toISOString().split('T')[0]);
-        let values;
-
-        if (currency === 'USD') {
-          values = response.results.map(result => 1 / result.c); // Invert the rates
-        } else {
-          values = response.results.map(result => result.c);
-        }
+      if (data.rates && data.rates.length > 0) {
+        const dates = data.rates.map(rate => rate.effectiveDate);
+        const values = data.rates.map(rate => rate.mid);
 
         setHistoricalData({ dates, values });
       } else {
