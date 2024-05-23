@@ -1,172 +1,141 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Button, TextInput, Alert } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { db } from '../../firebase'; // Ensure Firebase configuration is correctly imported
-import { Text, View } from '@/components/Themed';
-import { collection, addDoc, updateDoc, doc, onSnapshot } from 'firebase/firestore';
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { collection, getDocs, addDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../../firebase';
 
-const fetchExchangeRates = async () => {
-  try {
-    const response = await fetch('http://api.nbp.pl/api/exchangerates/tables/A?format=json');
-    const data = await response.json();
-    return data[0].rates;
-  } catch (error) {
-    console.error('Error fetching exchange rates: ', error);
-  }
+// Define a type for the budget item
+type BudgetItem = {
+    id: string;
+    name: string;
+    amount: number;
 };
 
-export default function WalletScreen() {
-  const [data, setData] = useState([]);
-  const [rates, setRates] = useState([]);
-  const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState('PLN');
-  const [newCurrency, setNewCurrency] = useState('USD');
-  const [showPicker, setShowPicker] = useState(null); // Track which item is being exchanged
+const BudgetManager: React.FC = () => {
+    // State for the list of budget items
+    const [items, setItems] = useState<BudgetItem[]>([]);
+    // State for the new item input fields
+    const [newItem, setNewItem] = useState<{ name: string; amount: string }>({ name: '', amount: '' });
 
-  useEffect(() => {
-    const q = collection(db, 'wallets');
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const dataList = [];
-      snapshot.forEach((doc) => {
-        dataList.push({ ...doc.data(), id: doc.id });
-      });
-      setData(dataList);
-    });
+    // Fetch data from Firestore on component mount
+    useEffect(() => {
+        const itemsCollection = collection(db, 'budgetItems');
+        
+        // Using onSnapshot to get real-time updates
+        const unsubscribe = onSnapshot(itemsCollection, snapshot => {
+            const itemsList = snapshot.docs.map(doc => ({
+                id: doc.id,
+                name: doc.data().name,
+                amount: doc.data().amount,
+            }));
+            setItems(itemsList);
+        });
 
-    fetchExchangeRates().then((rates) => setRates(rates));
+        // Clean up the listener on unmount
+        return () => unsubscribe();
+    }, []);
 
-    return () => unsubscribe();
-  }, []);
+    // Handle input change
+    const handleChange = (name: string, value: string) => {
+        setNewItem({
+            ...newItem,
+            [name]: value,
+        });
+    };
 
-  const addCurrency = async () => {
-    try {
-      const selectedRate = rates.find((rate) => rate.code === currency);
-      if (!selectedRate) {
-        Alert.alert('Error', 'Exchange rate for the specified currency not found');
-        return;
-      }
+    // Handle adding a new budget item
+    const handleAddItem = async () => {
+        if (newItem.name && newItem.amount) {
+            const newItemObj = {
+                name: newItem.name,
+                amount: parseFloat(newItem.amount),
+            };
+            await addDoc(collection(db, 'budgetItems'), newItemObj);
+            setNewItem({ name: '', amount: '' });
+        }
+    };
 
-      await addDoc(collection(db, 'wallets'), {
-        currency: currency,
-        amount: parseFloat(amount),
-        rate: selectedRate.mid,
-      });
-      setCurrency('PLN');
-      setAmount('');
-    } catch (e) {
-      console.error('Error adding document: ', e);
-    }
-  };
+    // Handle deleting a budget item
+    const handleDeleteItem = async (id: string) => {
+        await deleteDoc(doc(db, 'budgetItems', id));
+    };
 
-  const exchangeCurrency = async (id, newAmount, newCurrency) => {
-    try {
-      const docRef = doc(db, 'wallets', id);
-      await updateDoc(docRef, {
-        amount: newAmount,
-        currency: newCurrency,
-      });
-    } catch (e) {
-      console.error('Error updating document: ', e);
-    }
-  };
+    // Calculate total budget
+    const calculateTotal = () => {
+        return items.reduce((total, item) => total + item.amount, 0).toFixed(2);
+    };
 
-  const handleExchange = (id, currentAmount, currentCurrency) => {
-    const currentData = data.find((item) => item.id === id);
-    const newRate = rates.find((rate) => rate.code === newCurrency);
-
-    if (currentData && newRate) {
-      const newAmount = (parseFloat(currentAmount) * currentData.rate) / newRate.mid;
-      exchangeCurrency(id, newAmount.toFixed(2), newCurrency);
-      setShowPicker(null);
-    } else {
-      Alert.alert('Error', 'Exchange rate for the specified currency not found');
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Wallet</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-
-      <Picker
-        selectedValue={currency}
-        style={styles.picker}
-        onValueChange={(itemValue) => setCurrency(itemValue)}
-      >
-        <Picker.Item label="PLN" value="PLN" />
-        {rates.map((rate) => (
-          <Picker.Item key={rate.code} label={`${rate.currency} (${rate.code})`} value={rate.code} />
-        ))}
-      </Picker>
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Amount"
-        value={amount}
-        onChangeText={setAmount}
-        keyboardType="numeric"
-      />
-      <Button title="Add Currency" onPress={addCurrency} />
-
-      {data.map((item) => (
-        <View key={item.id} style={styles.item}>
-          <Text>{item.currency}: {item.amount}</Text>
-          <Button title="Exchange" onPress={() => setShowPicker(item.id)} />
-          {showPicker === item.id && (
-            <>
-              <Picker
-                selectedValue={newCurrency}
-                style={styles.picker}
-                onValueChange={(itemValue) => setNewCurrency(itemValue)}
-              >
-                {rates.map((rate) => (
-                  <Picker.Item key={rate.code} label={`${rate.currency} (${rate.code})`} value={rate.code} />
-                ))}
-              </Picker>
-              <Button title="Confirm Exchange" onPress={() => handleExchange(item.id, item.amount, item.currency)} />
-            </>
-          )}
+    return (
+        <View style={styles.container}>
+            <Text style={styles.title}>Budget Manager</Text>
+            <View style={styles.inputContainer}>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Item name"
+                    value={newItem.name}
+                    onChangeText={text => handleChange('name', text)}
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Amount"
+                    value={newItem.amount}
+                    keyboardType="numeric"
+                    onChangeText={text => handleChange('amount', text)}
+                />
+                <Button title="Add Item" onPress={handleAddItem} />
+            </View>
+            <FlatList
+                data={items}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => (
+                    <View style={styles.item}>
+                        <Text>{item.name}: ${item.amount.toFixed(2)}</Text>
+                        <TouchableOpacity onPress={() => handleDeleteItem(item.id)}>
+                            <Text style={styles.deleteButton}>Delete</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            />
+            <Text style={styles.total}>Total: ${calculateTotal()}</Text>
         </View>
-      ))}
-    </View>
-  );
-}
+    );
+};
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-  item: {
-    marginVertical: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    width: '80%',
-    alignItems: 'center',
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 10,
-    padding: 10,
-    width: '80%',
-  },
-  picker: {
-    height: 50,
-    width: '80%',
-    marginBottom: 10,
-  },
+    container: {
+        flex: 1,
+        padding: 20,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+    },
+    inputContainer: {
+        marginBottom: 20,
+    },
+    input: {
+        height: 40,
+        borderColor: 'gray',
+        borderWidth: 1,
+        marginBottom: 10,
+        paddingHorizontal: 10,
+    },
+    item: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+    },
+    deleteButton: {
+        color: 'red',
+    },
+    total: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginTop: 20,
+    },
 });
+
+export default BudgetManager;
