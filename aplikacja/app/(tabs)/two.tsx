@@ -13,12 +13,12 @@ export default function CurrencyConverter() {
     fetch('https://api.exchangerate-api.com/v4/latest/USD')
       .then(response => response.json())
       .then(data => setRates(data.rates))
-      .catch(error => Alert.alert('Error', 'Failed to fetch exchange rates.'));
+      .catch(error => Alert.alert('Błąd', 'Nie udało się pobrać kursów wymiany.'));
   }, []);
 
   const convertCurrency = () => {
     if (!amount) {
-      Alert.alert('Error', 'Please enter an amount.');
+      Alert.alert('Błąd', 'Proszę wprowadzić kwotę.');
       return;
     }
     const rate = rates[toCurrency] / rates[fromCurrency];
@@ -28,11 +28,11 @@ export default function CurrencyConverter() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Currency Converter</Text>
+      <Text style={styles.title}>Kalkulator Walutowy</Text>
       <TextInput
         style={styles.input}
         keyboardType="numeric"
-        placeholder="Enter amount"
+        placeholder="Wprowadź kwotę"
         value={amount}
         onChangeText={setAmount}
       />
@@ -46,7 +46,7 @@ export default function CurrencyConverter() {
         items={Object.keys(rates).map(currency => ({ label: currency, value: currency }))}
         value={toCurrency}
       />
-      <Button title="Convert" onPress={convertCurrency} />
+      <Button title="Przelicz" onPress={convertCurrency} />
       {result && (
         <Text style={styles.result}>
           {amount} {fromCurrency} = {result} {toCurrency}

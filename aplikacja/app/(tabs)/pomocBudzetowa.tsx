@@ -40,19 +40,19 @@ export default function PomocBudzetowa() {
   const handleSaveBudget = () => {
     if (monthlyBudget && selectedMonth) {
       calculateBudgetDetails();
-      Alert.alert('Budget Saved', `Your monthly budget is ${monthlyBudget} for ${selectedMonth}`);
+      Alert.alert('Budżet Zapisany', `Twój miesięczny budżet to ${monthlyBudget} PLN na ${selectedMonth}`);
     } else {
-      Alert.alert('Error', 'Please enter a budget amount and select a month.');
+      Alert.alert('Błąd', 'Proszę wprowadzić kwotę budżetu i wybrać miesiąc.');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Set Monthly Budget</Text>
+      <Text style={styles.title}>Ustaw Miesięczny Budżet</Text>
       <TextInput
         style={styles.input}
         keyboardType="numeric"
-        placeholder="Enter monthly budget"
+        placeholder="Wprowadź miesięczny budżet"
         value={monthlyBudget}
         onChangeText={setMonthlyBudget}
       />
@@ -61,21 +61,21 @@ export default function PomocBudzetowa() {
         style={styles.picker}
         onValueChange={(itemValue) => setSelectedMonth(itemValue)}
       >
-        <Picker.Item label="Select Month" value="" />
-        <Picker.Item label="January" value="2024-01" />
-        <Picker.Item label="February" value="2024-02" />
-        <Picker.Item label="March" value="2024-03" />
-        <Picker.Item label="April" value="2024-04" />
-        <Picker.Item label="May" value="2024-05" />
-        <Picker.Item label="June" value="2024-06" />
-        <Picker.Item label="July" value="2024-07" />
-        <Picker.Item label="August" value="2024-08" />
-        <Picker.Item label="September" value="2024-09" />
-        <Picker.Item label="October" value="2024-10" />
-        <Picker.Item label="November" value="2024-11" />
-        <Picker.Item label="December" value="2024-12" />
+        <Picker.Item label="Wybierz Miesiąc" value="" />
+        <Picker.Item label="Styczeń" value="2024-01" />
+        <Picker.Item label="Luty" value="2024-02" />
+        <Picker.Item label="Marzec" value="2024-03" />
+        <Picker.Item label="Kwiecień" value="2024-04" />
+        <Picker.Item label="Maj" value="2024-05" />
+        <Picker.Item label="Czerwiec" value="2024-06" />
+        <Picker.Item label="Lipiec" value="2024-07" />
+        <Picker.Item label="Sierpień" value="2024-08" />
+        <Picker.Item label="Wrzesień" value="2024-09" />
+        <Picker.Item label="Październik" value="2024-10" />
+        <Picker.Item label="Listopad" value="2024-11" />
+        <Picker.Item label="Grudzień" value="2024-12" />
       </Picker>
-      <Button title="Save Budget" onPress={handleSaveBudget} />
+      <Button title="Zapisz Budżet" onPress={handleSaveBudget} />
       {budgetDetails.kosztyZycia > 0 && (
         <View style={styles.detailsContainer}>
           <Text style={styles.detailText}>Koszty Życia: {budgetDetails.kosztyZycia.toFixed(2)} PLN</Text>
@@ -84,7 +84,7 @@ export default function PomocBudzetowa() {
           <Text style={styles.detailText}>Oszczędności: {budgetDetails.oszczednosci.toFixed(2)} PLN</Text>
         </View>
       )}
-      <Button title="Go to Calendar" onPress={() => navigation.navigate('pomocBydzetowaCalendar')} />
+      <Button title="Przejdź do Kalendarza" onPress={() => navigation.navigate('pomocBydzetowaCalendar')} />
     </View>
   );
 }

@@ -6,9 +6,9 @@ import { LineChart } from 'react-native-chart-kit';
 const screenWidth = Dimensions.get('window').width;
 
 const periods = [
-  { label: 'Last 7 Days', value: '7' },
-  { label: 'Last 14 Days', value: '14' },
-  { label: 'Last 30 Days', value: '30' },
+  { label: 'Ostatnie 7 dni', value: '7' },
+  { label: 'Ostatnie 14 dni', value: '14' },
+  { label: 'Ostatnie 30 dni', value: '30' },
 ];
 
 export default function TabThreeScreen() {
@@ -41,10 +41,10 @@ export default function TabThreeScreen() {
 
         setHistoricalData({ dates, values });
       } else {
-        Alert.alert('Error', 'No historical data available.');
+        Alert.alert('Błąd', 'Brak dostępnych danych historycznych.');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to fetch historical data.');
+      Alert.alert('Błąd', 'Nie udało się pobrać danych historycznych.');
       console.error(error);
     } finally {
       setLoading(false);
@@ -53,9 +53,9 @@ export default function TabThreeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Historical Exchange Rate</Text>
+      <Text style={styles.title}>Historyczny Kurs Wymiany</Text>
       <View style={styles.pickerContainer}>
-        <Text>Select Currency:</Text>
+        <Text>Wybierz Walutę:</Text>
         <Picker
           selectedValue={currency}
           style={styles.picker}
@@ -65,11 +65,11 @@ export default function TabThreeScreen() {
           <Picker.Item label="EUR" value="EUR" />
           <Picker.Item label="GBP" value="GBP" />
           <Picker.Item label="JPY" value="JPY" />
-          {/* Add more currencies as needed */}
+          {/* Dodaj więcej walut w razie potrzeby */}
         </Picker>
       </View>
       <View style={styles.pickerContainer}>
-        <Text>Select Period:</Text>
+        <Text>Wybierz Okres:</Text>
         <Picker
           selectedValue={period}
           style={styles.picker}
@@ -81,7 +81,7 @@ export default function TabThreeScreen() {
         </Picker>
       </View>
       {loading ? (
-        <Text>Loading...</Text>
+        <Text>Ładowanie...</Text>
       ) : (
         historicalData.dates.length > 0 && (
           <LineChart

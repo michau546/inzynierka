@@ -66,36 +66,36 @@ const BudgetManager: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Budget Manager</Text>
+            <Text style={styles.title}>Menedżer Budżetu</Text>
             <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.input}
-                    placeholder="Item name"
+                    placeholder="Nazwa przedmiotu"
                     value={newItem.name}
                     onChangeText={text => handleChange('name', text)}
                 />
                 <TextInput
                     style={styles.input}
-                    placeholder="Amount"
+                    placeholder="Kwota"
                     value={newItem.amount}
                     keyboardType="numeric"
                     onChangeText={text => handleChange('amount', text)}
                 />
-                <Button title="Add Item" onPress={handleAddItem} />
+                <Button title="Dodaj Przedmiot" onPress={handleAddItem} />
             </View>
             <FlatList
                 data={items}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                     <View style={styles.item}>
-                        <Text>{item.name}: ${item.amount.toFixed(2)}</Text>
+                        <Text>{item.name}: {item.amount.toFixed(2)} zł</Text>
                         <TouchableOpacity onPress={() => handleDeleteItem(item.id)}>
-                            <Text style={styles.deleteButton}>Delete</Text>
+                            <Text style={styles.deleteButton}>Usuń</Text>
                         </TouchableOpacity>
                     </View>
                 )}
             />
-            <Text style={styles.total}>Total: ${calculateTotal()}</Text>
+            <Text style={styles.total}>Razem: {calculateTotal()} zł</Text>
         </View>
     );
 };
