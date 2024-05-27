@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, Button, Alert, FlatList, TouchableOpacity } from 'react-native';
-import { Calendar } from 'react-native-calendars';
+import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { useNavigation } from 'expo-router';
 import { db } from '../../firebase';
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
+
+// Set locale configuration for Polish
+LocaleConfig.locales['pl'] = {
+  monthNames: ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'],
+  monthNamesShort: ['Sty.', 'Lut.', 'Mar.', 'Kwi.', 'Maj', 'Cze.', 'Lip.', 'Sie.', 'Wrz.', 'Paź.', 'Lis.', 'Gru.'],
+  dayNames: ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'],
+  dayNamesShort: ['Nie.', 'Pon.', 'Wto.', 'Śro.', 'Czw.', 'Pią.', 'Sob.'],
+  today: 'Dzisiaj'
+};
+LocaleConfig.defaultLocale = 'pl';
 
 export default function PomocBudzetowaCalendar() {
   const [selectedDate, setSelectedDate] = useState('');
@@ -63,26 +73,45 @@ export default function PomocBudzetowaCalendar() {
   };
 
   const handleDayPress = (day) => {
-    setSelectedDate(day.dateString);
+    const dateStr = day.dateString;
 
-    // Clear previous selection
-    const newExpenses = { ...expenses };
-    Object.keys(newExpenses).forEach((key) => {
-      if (newExpenses[key].selected) {
-        delete newExpenses[key].selected;
-        delete newExpenses[key].selectedColor;
-      }
-    });
+    // Toggle selection
+    if (selectedDate === dateStr) {
+      // Deselect if the same date is selected again
+      setSelectedDate('');
+      setExpenses((prevExpenses) => {
+        const newExpenses = { ...prevExpenses };
+        if (newExpenses[dateStr]) {
+          delete newExpenses[dateStr].selected;
+          delete newExpenses[dateStr].selectedColor;
+        }
+        return newExpenses;
+      });
+      setExpenseList([]);
+    } else {
+      // Select new date
+      setSelectedDate(dateStr);
+      fetchExpensesForDate(dateStr);
 
-    // Highlight the selected date
-    newExpenses[day.dateString] = {
-      ...newExpenses[day.dateString],
-      selected: true,
-      selectedColor: 'blue',
-    };
+      // Clear previous selection and highlight the new selected date
+      setExpenses((prevExpenses) => {
+        const newExpenses = { ...prevExpenses };
+        Object.keys(newExpenses).forEach((key) => {
+          if (newExpenses[key].selected) {
+            delete newExpenses[key].selected;
+            delete newExpenses[key].selectedColor;
+          }
+        });
 
-    setExpenses(newExpenses);
-    fetchExpensesForDate(day.dateString);
+        newExpenses[dateStr] = {
+          ...newExpenses[dateStr],
+          selected: true,
+          selectedColor: 'blue',
+        };
+
+        return newExpenses;
+      });
+    }
   };
 
   const handleAddExpense = async () => {
@@ -137,20 +166,24 @@ export default function PomocBudzetowaCalendar() {
         markedDates={expenses}
         markingType={'custom'}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter expense name"
-        value={expenseName}
-        onChangeText={setExpenseName}
-      />
-      <TextInput
-        style={styles.input}
-        keyboardType="numeric"
-        placeholder="Enter expense amount"
-        value={expense}
-        onChangeText={setExpense}
-      />
-      <Button title={editExpenseId ? "Update Expense" : "Add Expense"} onPress={handleAddExpense} />
+      {selectedDate && (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter expense name"
+            value={expenseName}
+            onChangeText={setExpenseName}
+          />
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            placeholder="Enter expense amount"
+            value={expense}
+            onChangeText={setExpense}
+          />
+          <Button title={editExpenseId ? "Update Expense" : "Add Expense"} onPress={handleAddExpense} />
+        </>
+      )}
       {expenseList.length > 0 && (
         <FlatList
           data={expenseList}
